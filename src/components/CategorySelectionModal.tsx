@@ -21,7 +21,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [showWordBank, setShowWordBank] = useState(false);
+  const [showWordBank, setShowWordBank] = useState(true);
   // We set the generated category but don't need to use it directly as it's passed to the parent
   const [, setGeneratedCategory] = useState<{ category: string; words: string[] } | null>(null);
   
