@@ -130,7 +130,8 @@ const Game: React.FC = () => {
     );
   }
 
-  const allPlayersReady = game.players.every(player => player.isReady);
+  // Players are now automatically ready, so no need to check this
+  const allPlayersReady = true;
   const canStartGame = currentPlayer.isHost && allPlayersReady && game.players.length >= 2 && game.status === GameStatus.WAITING;
 
   return (
@@ -261,12 +262,9 @@ const Game: React.FC = () => {
                 ))}
               </div>
               
+              {/* Display message when not enough players */}
               {currentPlayer.isHost && !canStartGame && game.players.length < 2 && (
                 <p className="text-sm text-gray-500 mt-4">Need at least 2 players to start the game.</p>
-              )}
-              
-              {currentPlayer.isHost && !canStartGame && game.players.length >= 2 && (
-                <p className="text-sm text-gray-500 mt-4">Waiting for all players to be ready.</p>
               )}
             </motion.div>
           )}
