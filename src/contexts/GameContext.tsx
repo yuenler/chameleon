@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Game, Player } from '../types';
-import { subscribeToGame, createGame, joinGame, startGame, restartGame, leaveGame, setPlayerReady } from '../services/gameService';
+import { subscribeToGame, createGame, joinGame, startGame, restartGame, leaveGame, setPlayerReady, kickPlayer, processPendingLeave } from '../services/gameService';
 
 interface GameContextType {
   game: Game | null;
@@ -13,6 +13,7 @@ interface GameContextType {
   restartCurrentGame: () => Promise<void>;
   leaveCurrentGame: () => Promise<void>;
   setReady: (isReady: boolean) => Promise<void>;
+  kickPlayer: (playerIdToKick: string) => Promise<void>;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -30,6 +31,14 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Process any pending leave operations first
+  useEffect(() => {
+    // This handles players who closed the browser or refreshed
+    processPendingLeave().catch(err => {
+      console.error('Error processing pending leave:', err);
+    });
+  }, []);
 
   // Clean up game subscription on unmount
   useEffect(() => {
@@ -195,7 +204,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const setReady = async (isReady: boolean) => {
+  const setReady = async (isReady: boolean): Promise<void> => {
     if (!game || !currentPlayer) {
       return;
     }
@@ -205,6 +214,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       
       await setPlayerReady(game.id, currentPlayer.id, isReady);
+      
+      setIsLoading(false);
+    } catch (err) {
+      setError((err as Error).message);
+      setIsLoading(false);
+    }
+  };
+  
+  // Kick a player (host only)
+  const kickPlayerFromGame = async (playerIdToKick: string): Promise<void> => {
+    if (!game || !currentPlayer || !currentPlayer.isHost) {
+      throw new Error('Only the host can kick players');
+    }
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      await kickPlayer(game.id, playerIdToKick);
       
       setIsLoading(false);
     } catch (err) {
@@ -225,7 +253,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         startCurrentGame,
         restartCurrentGame,
         leaveCurrentGame,
-        setReady
+        setReady,
+        kickPlayer: kickPlayerFromGame
       }}
     >
       {children}

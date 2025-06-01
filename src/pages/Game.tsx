@@ -1,24 +1,86 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { GameStatus } from '../types';
 import ChameleonIcon from '../components/ChameleonIcon';
-import { ArrowBackIcon, CopyIcon, RefreshIcon, UserCheckIcon, UserClockIcon } from '../components/Icons';
+import { ArrowBackIcon, CopyIcon, RefreshIcon, UserCheckIcon, UserClockIcon, UserMinusIcon } from '../components/Icons';
+import { handlePageUnload } from '../services/gameService';
 
 const Game: React.FC = () => {
-  const { game, currentPlayer, isLoading, error, leaveCurrentGame, startCurrentGame, restartCurrentGame, setReady } = useGame();
+  const { 
+    game, 
+    currentPlayer, 
+    isLoading, 
+    error, 
+    leaveCurrentGame, 
+    startCurrentGame, 
+    restartCurrentGame, 
+    setReady, 
+    kickPlayer 
+  } = useGame();
   const navigate = useNavigate();
 
+  // Store the current player ID to detect if the player is kicked
+  const [currentPlayerIdRef] = useState(currentPlayer?.id);
+
   useEffect(() => {
+    // Case 1: Game doesn't exist or player navigated directly to game page
     if (!game && !isLoading) {
       navigate('/');
+      return;
     }
-  }, [game, isLoading, navigate]);
+
+    // Case 2: Player has been kicked (player exists but not in the game's player list)
+    if (game && currentPlayerIdRef && !game.players.some(p => p.id === currentPlayerIdRef)) {
+      console.log('You have been kicked from the game');
+      localStorage.removeItem('gameId'); // Clear game data
+      localStorage.removeItem('playerId');
+      navigate('/');
+      return;
+    }
+
+    // Set up event listener for page unload (refresh, close tab)
+    const handleBeforeUnload = () => {
+      if (game && currentPlayer) {
+        console.log('User is leaving the page, removing from game...');
+        // Use our synchronous handler that stores leave info in localStorage
+        handlePageUnload(game.id, currentPlayer.id);
+      }
+    };
+
+    // Handle navigation away using the History API (back button)
+    const handlePopState = () => {
+      if (game && currentPlayer) {
+        console.log('User clicked back button, removing from game...');
+        leaveCurrentGame();
+        // No need to call handlePageUnload here because leaveCurrentGame handles it
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [game, isLoading, navigate, currentPlayerIdRef, currentPlayer, leaveCurrentGame]);
 
   const handleCopyJoinCode = () => {
-    if (game) {
+    if (game?.joinCode) {
       navigator.clipboard.writeText(game.joinCode);
+    }
+  };
+  
+  const handleKickPlayer = async (playerId: string, playerName: string) => {
+    if (window.confirm(`Are you sure you want to kick ${playerName}?`)) {
+      try {
+        await kickPlayer(playerId);
+      } catch (error) {
+        console.error('Error kicking player:', error);
+        alert('Failed to kick player');
+      }
     }
   };
 
@@ -163,7 +225,7 @@ const Game: React.FC = () => {
                 {game.players.map(player => (
                   <div 
                     key={player.id} 
-                    className={`flex items-center justify-between p-3 rounded-lg ${player.id === currentPlayer.id ? 'bg-primary-50 border border-primary-200' : 'bg-gray-50'}`}
+                    className={`flex items-center justify-between p-3 rounded-lg ${player.id === currentPlayer.id ? 'bg-primary-50 border border-primary-200' : 'bg-gray-50'} group`}
                   >
                     <div className="flex items-center">
                       <span className="font-medium">
@@ -171,11 +233,23 @@ const Game: React.FC = () => {
                       </span>
                       {player.isHost && <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">Host</span>}
                     </div>
-                    <div>
+                    <div className="flex items-center space-x-3">
+                      {/* Ready/Not Ready Status */}
                       {player.isReady ? 
                         <UserCheckIcon className="text-green-500" /> : 
                         <UserClockIcon className="text-yellow-500" />
                       }
+                      
+                      {/* Kick button - only visible to host and only for non-host players */}
+                      {currentPlayer.isHost && !player.isHost && player.id !== currentPlayer.id && (
+                        <button 
+                          onClick={() => handleKickPlayer(player.id, player.name)}
+                          className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-700 p-1"
+                          title="Kick player"
+                        >
+                          <UserMinusIcon />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}

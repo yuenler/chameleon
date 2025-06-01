@@ -5,7 +5,8 @@ import {
   faCopy,
   faRotate,
   faUserCheck,
-  faClock
+  faClock,
+  faUserMinus
 } from '@fortawesome/free-solid-svg-icons';
 
 interface IconProps {
@@ -30,4 +31,8 @@ export const UserCheckIcon: React.FC<IconProps> = ({ className }) => {
 
 export const UserClockIcon: React.FC<IconProps> = ({ className }) => {
   return <FontAwesomeIcon icon={faClock} className={className} />;
+};
+
+export const UserMinusIcon: React.FC<IconProps> = ({ className }) => {
+  return <FontAwesomeIcon icon={faUserMinus} className={className} />;
 };

@@ -157,7 +157,7 @@ const Home: React.FC = () => {
         transition={{ delay: 0.8, duration: 0.5 }}
         className="mt-16 text-gray-500 text-sm"
       >
-        <p>Created with ❤️ • {new Date().getFullYear()}</p>
+        <p>Created by Yuen Ler Chow • {new Date().getFullYear()}</p>
       </motion.div>
     </div>
   );

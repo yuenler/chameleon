@@ -1,5 +1,5 @@
 import { db } from '../firebase/config';
-import { doc, collection, getDocs, query, where, updateDoc, getDoc, setDoc, onSnapshot, arrayRemove, deleteField } from 'firebase/firestore';
+import { doc, collection, getDocs, query, where, updateDoc, getDoc, setDoc, onSnapshot, deleteField } from 'firebase/firestore';
 import { Game, GameStatus, Player } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -225,27 +225,101 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<void>
     return; // Player not in game, nothing to do
   }
   
-  if (player.isHost && game.players.length > 1) {
-    // If the host is leaving, assign a new host
-    const remainingPlayers = game.players.filter(p => p.id !== playerId);
+  // If there's only one player, mark the game as ended
+  if (game.players.length === 1) {
+    await updateDoc(gameRef, { status: GameStatus.ENDED });
+    return;
+  }
+  
+  // Remove the player from the game
+  let updatedPlayers = game.players.filter(p => p.id !== playerId);
+  
+  // If the leaving player was the host, assign a new host
+  if (player.isHost && updatedPlayers.length > 0) {
+    console.log('Host is leaving, assigning new host');
+    // Assign the first remaining player as the new host
+    updatedPlayers = updatedPlayers.map((p, index) => ({
+      ...p,
+      isHost: index === 0 // Make the first player the new host
+    }));
+  }
+  
+  await updateDoc(gameRef, {
+    players: updatedPlayers,
+    updatedAt: Date.now()
+  });
+};
+
+// Kick a player (host only)
+export const kickPlayer = async (gameId: string, playerIdToKick: string): Promise<void> => {
+  const gameRef = doc(db, 'games', gameId);
+  const gameDoc = await getDoc(gameRef);
+  
+  if (!gameDoc.exists()) {
+    throw new Error('Game not found');
+  }
+  
+  const game = gameDoc.data() as Game;
+  
+  // Make sure the player to kick exists and is not the host
+  const playerToKick = game.players.find(p => p.id === playerIdToKick);
+  if (!playerToKick) {
+    throw new Error('Player not found');
+  }
+  
+  if (playerToKick.isHost) {
+    throw new Error('Cannot kick the host');
+  }
+  
+  // Remove the player from the game
+  const updatedPlayers = game.players.filter(p => p.id !== playerIdToKick);
+  
+  await updateDoc(gameRef, {
+    players: updatedPlayers,
+    updatedAt: Date.now()
+  });
+};
+
+// Handle page unload events (back button, refresh, tab close)
+// We need to store pending leave info to process on next app load
+export const handlePageUnload = (gameId: string, playerId: string): void => {
+  try {
+    // Store info about the player leaving in localStorage
+    // This will be processed on next app load
+    localStorage.setItem('pendingLeave', JSON.stringify({
+      gameId,
+      playerId,
+      timestamp: Date.now()
+    }));
     
-    const updatedPlayers = remainingPlayers.map((p, index) => 
-      index === 0 ? { ...p, isHost: true } : p
-    );
-    
-    await updateDoc(gameRef, {
-      players: updatedPlayers,
-      updatedAt: Date.now()
-    });
-  } else if (player.isHost && game.players.length === 1) {
-    // If the host is the only player, delete the game
-    // This could be implemented if needed
-  } else {
-    // Remove the player from the game
-    await updateDoc(gameRef, {
-      players: arrayRemove(player),
-      updatedAt: Date.now()
-    });
+    // Clear game session data
+    localStorage.removeItem('gameId');
+    localStorage.removeItem('playerId');
+  } catch (error) {
+    console.error('Error during page unload:', error);
+  }
+};
+
+// Process any pending leave operations from previous sessions
+// This should be called when the app initializes
+export const processPendingLeave = async (): Promise<void> => {
+  try {
+    const pendingLeaveData = localStorage.getItem('pendingLeave');
+    if (pendingLeaveData) {
+      const { gameId, playerId, timestamp } = JSON.parse(pendingLeaveData);
+      
+      // Only process if it's less than 1 hour old
+      if (Date.now() - timestamp < 60 * 60 * 1000) {
+        console.log('Processing pending leave operation for player', playerId);
+        await leaveGame(gameId, playerId);
+      }
+      
+      // Clear the pending leave data
+      localStorage.removeItem('pendingLeave');
+    }
+  } catch (error) {
+    console.error('Error processing pending leave:', error);
+    localStorage.removeItem('pendingLeave'); // Clear it to avoid repeated errors
   }
 };
 
