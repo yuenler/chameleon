@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { GameStatus } from '../types';
 import ChameleonIcon from '../components/ChameleonIcon';
-import { ArrowBackIcon, CopyIcon, RefreshIcon, UserMinusIcon } from '../components/Icons';
+import { ArrowBackIcon, CopyIcon, UserMinusIcon } from '../components/Icons';
 import CategorySelectionModal from '../components/CategorySelectionModal';
 
 const Game: React.FC = () => {
@@ -143,6 +143,7 @@ const Game: React.FC = () => {
         onSelectCategory={handleCategorySelected}
       />
       <header className="flex justify-between items-center mb-4">
+        {/* Leave Button - Left */}
         <button
           onClick={handleLeaveGame}
           className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md flex items-center gap-1 text-xs font-medium transition-colors"
@@ -150,6 +151,14 @@ const Game: React.FC = () => {
         >
           <ArrowBackIcon className="text-xs" /> Leave
         </button>
+        
+        {/* Chameleon Icon and Title - Center */}
+        <div className="flex items-center">
+          <ChameleonIcon className="h-5 w-5 text-primary-600 mr-1.5" />
+          <span className="font-semibold text-primary-700">Chameleon</span>
+        </div>
+        
+        {/* Game Code - Right */}
         <div className="flex items-center space-x-2">
           <span className="text-sm font-semibold">#{game.joinCode}</span>
           <button
@@ -160,18 +169,6 @@ const Game: React.FC = () => {
             <CopyIcon className="h-3.5 w-3.5" />
           </button>
         </div>
-        {currentPlayer.isHost && game.status === GameStatus.PLAYING && (
-          <button 
-            onClick={handleRestartGame}
-            className="p-1 text-gray-600 hover:text-primary-600 transition-colors"
-            title="Restart Game"
-          >
-            <RefreshIcon className="text-sm" />
-          </button>
-        )}
-        {!currentPlayer.isHost && (
-          <div className="w-8"></div>
-        )}
       </header>
 
       <main>
@@ -308,7 +305,7 @@ const Game: React.FC = () => {
                     <div className="mt-4 text-center">
                       <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-teal-100 text-sm font-medium text-teal-800">
                         <ChameleonIcon className="h-4 w-4 mr-1.5 text-teal-700" />
-                        You are the chameleon! Try to guess the secret word
+                        You are the chameleon! Try to guess the secret word.
                       </span>
                     </div>
                   </div>
@@ -321,20 +318,20 @@ const Game: React.FC = () => {
                     <p className="text-sm text-gray-500 mt-4">Don't reveal the word! The chameleon is trying to figure it out.</p>
                   </div>
                 )}
-              </div>
-              
-              {/* Chameleon Card - Only shown if player is the chameleon and word bank is disabled */}
-              {currentPlayer.isChameleon && !game.showWordBank && (
-                <div className="card text-center bg-gradient-to-r from-teal-500 to-primary-500 text-white">
-                  <div className="flex justify-center mb-2">
-                    <ChameleonIcon className="text-4xl h-12 w-12" />
+                
+                {/* For chameleons when word bank is disabled */}
+                {currentPlayer.isChameleon && !game.showWordBank && (
+                  <div className="text-center py-2 bg-gradient-to-r from-teal-500 to-primary-500 text-white rounded-lg">
+                    <div className="flex justify-center mb-2">
+                      <ChameleonIcon className="text-4xl h-10 w-10" />
+                    </div>
+                    <h2 className="text-lg font-semibold mb-2">You are the Chameleon!</h2>
+                    <p className="text-base px-4">
+                      Blend in! Try to figure out the secret word for the category <strong>{game.currentCategory}</strong> without getting caught.
+                    </p>
                   </div>
-                  <h2 className="text-xl font-semibold mb-2">You are the Chameleon!</h2>
-                  <p className="text-lg">
-                    Blend in! Try to figure out the secret word from the category <strong>{game.currentCategory}</strong> without getting caught.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
               
               {/* Players List */}
               <div className="card">
