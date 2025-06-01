@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     
     const userPrompt = prompt ? 
       `${basePrompt} The category should be related to: ${prompt}` : 
-      basePrompt;
+      `${basePrompt} Make your category creative like "things you might find in a gym bag" or "things you might find in a doctor's office" or "reasons why you might be late".`;
 
     // Call OpenAI API
     const response = await openaiClient.chat.completions.create({

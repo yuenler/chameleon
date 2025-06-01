@@ -132,7 +132,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
                 type="text"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder="e.g., 'Sci-fi movies' or 'Exotic fruits'"
+                placeholder="e.g., 'Things you might find in a gym bag'"
                 className="w-full p-2 border border-gray-300 rounded-md"
                 disabled={isGenerating}
               />
