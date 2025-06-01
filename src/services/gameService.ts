@@ -241,7 +241,7 @@ export const restartGame = async (gameId: string): Promise<Game> => {
   const updatedPlayers = game.players.map(player => ({
     ...player,
     isChameleon: false,
-    isReady: false
+    isReady: true // Players are automatically ready
   }));
   
   // Use deleteField() to remove fields from Firestore
