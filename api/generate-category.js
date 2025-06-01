@@ -33,6 +33,7 @@ export default async function handler(req, res) {
         { role: "system", content: "You are a creative assistant generating content for a word game." },
         { role: "user", content: userPrompt }
       ],
+      temperature: 2,
     });
 
     const content = response.choices[0]?.message.content;
