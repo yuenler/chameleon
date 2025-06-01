@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Define the base prompt for category generation
     const basePrompt = "Generate a creative category for a word guessing game called Chameleon. " +
-      "Return a JSON object with 'category' (the name of the category) and 'words' (an array of exactly 30 interesting words or phrases that belong to this category). " +
+      "Return a JSON object with 'category' (the name of the category) and 'words' (an array of exactly 5 interesting words or phrases that belong to this category). " +
       "The words should be recognizable by most people, but can be specific to the category. " +
       "Make sure all items are related to the category. " +
       "Return ONLY the JSON object without any explanation or additional text.";
@@ -28,12 +28,11 @@ export default async function handler(req, res) {
 
     // Call OpenAI API
     const response = await openaiClient.chat.completions.create({
-      model: "gpt-4",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: "You are a creative assistant generating content for a word game." },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.8,
     });
 
     const content = response.choices[0]?.message.content;
@@ -51,16 +50,16 @@ export default async function handler(req, res) {
       const parsedResponse = JSON.parse(jsonString);
       
       // Validate the response format
-      if (!parsedResponse.category || !Array.isArray(parsedResponse.words) || parsedResponse.words.length < 8) {
+      if (!parsedResponse.category || !Array.isArray(parsedResponse.words) || parsedResponse.words.length < 5) {
         return res.status(500).json({ error: "Invalid response format from OpenAI" });
       }
 
-      // Ensure we have exactly 30 words, truncate if more, or use defaults if less
-      const words = parsedResponse.words.slice(0, 30);
+      // Ensure we have exactly 5 words, truncate if more, or use defaults if less
+      const words = parsedResponse.words.slice(0, 5);
       
       const result = {
         category: parsedResponse.category,
-        words: words.length >= 8 ? words : [...words, ...Array(30 - words.length).fill("").map((_, i) => `Item ${i + words.length + 1}`)]
+        words: words.length >= 5 ? words : [...words, ...Array(5 - words.length).fill("").map((_, i) => `Item ${i + words.length + 1}`)]
       };
 
       return res.status(200).json(result);
