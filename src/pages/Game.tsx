@@ -104,11 +104,11 @@ const Game: React.FC = () => {
     setIsCategoryModalOpen(true);
   };
 
-  const handleCategorySelected = async (category: string, words: string[]) => {
+  const handleCategorySelected = async (category: string, words: string[], showWordBank: boolean) => {
     if (isLoading) return;
     
     try {
-      await startCurrentGame({ category, words });
+      await startCurrentGame({ category, words, showWordBank });
     } catch (error) {
       console.error('Error starting game:', error);
     }
@@ -284,6 +284,21 @@ const Game: React.FC = () => {
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">Category</h2>
                 <p className="text-3xl font-bold text-primary-700">{game.currentCategory}</p>
               </div>
+              
+              {/* Word Bank - Only shown if showWordBank is enabled */}
+              {game.showWordBank && (
+                <div className="card">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">Word Bank</h2>
+                  <p className="text-sm text-gray-500 mb-3 text-center">All possible words for this category:</p>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    {game.categoryWords?.map((word: string) => (
+                      <span key={word} className="bg-gray-100 px-3 py-1 rounded-full text-gray-700">
+                        {word}
+                      </span>
+                    )) || <p className="text-gray-500">No words available</p>}
+                  </div>
+                </div>
+              )}
               
               {/* Word Card - Only shown if player is not the chameleon */}
               {!currentPlayer.isChameleon && (

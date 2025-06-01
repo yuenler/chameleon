@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Define the base prompt for category generation
     const basePrompt = "Generate a creative category for a word guessing game called Chameleon. " +
-      "Return a JSON object with 'category' (the name of the category) and 'words' (an array of exactly 5 interesting words or phrases that belong to this category). " +
+      "Return a JSON object with 'category' (the name of the category) and 'words' (an array of exactly 16 interesting words or phrases that belong to this category). " +
       "The words should be recognizable by most people, but can be specific to the category. " +
       "Make sure all items are related to the category. " +
       "Return ONLY the JSON object without any explanation or additional text.";
@@ -55,12 +55,12 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: "Invalid response format from OpenAI" });
       }
 
-      // Ensure we have exactly 5 words, truncate if more, or use defaults if less
-      const words = parsedResponse.words.slice(0, 5);
+      // Ensure we have exactly 16 words, truncate if more, or use defaults if less
+      const words = parsedResponse.words.slice(0, 16);
       
       const result = {
         category: parsedResponse.category,
-        words: words.length >= 5 ? words : [...words, ...Array(5 - words.length).fill("").map((_, i) => `Item ${i + words.length + 1}`)]
+        words: words.length >= 16 ? words : [...words, ...Array(16 - words.length).fill("").map((_, i) => `Item ${i + words.length + 1}`)]
       };
 
       return res.status(200).json(result);

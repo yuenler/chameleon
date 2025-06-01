@@ -9,11 +9,13 @@ export interface Player {
 export interface Game {
   id: string;
   joinCode: string;
-  players: Player[];
   status: GameStatus;
-  currentWord?: string;
+  players: Player[];
   currentCategory?: string;
+  currentWord?: string;
+  categoryWords?: string[];
   chameleonId?: string;
+  showWordBank?: boolean;
   createdAt: number;
   updatedAt: number;
 }

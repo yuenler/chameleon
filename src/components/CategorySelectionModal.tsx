@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 interface CategorySelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectCategory: (category: string, words: string[]) => void;
+  onSelectCategory: (category: string, words: string[], showWordBank: boolean) => void;
 }
 
 const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({ 
@@ -18,6 +18,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [showWordBank, setShowWordBank] = useState(false);
   // We set the generated category but don't need to use it directly as it's passed to the parent
   const [, setGeneratedCategory] = useState<{ category: string; words: string[] } | null>(null);
   
@@ -34,7 +35,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
 
   const handleSelectRandom = () => {
     const randomCategory = getRandomCategory();
-    onSelectCategory(randomCategory.category, randomCategory.words);
+    onSelectCategory(randomCategory.category, randomCategory.words, showWordBank);
     onClose();
   };
   
@@ -43,7 +44,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
     
     const categories = getDefaultCategories();
     const words = categories[selectedCategory as keyof typeof categories];
-    onSelectCategory(selectedCategory, words);
+    onSelectCategory(selectedCategory, words, showWordBank);
     onClose();
   };
 
@@ -56,7 +57,7 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
       
       if (result) {
         setGeneratedCategory(result);
-        onSelectCategory(result.category, result.words);
+        onSelectCategory(result.category, result.words, showWordBank);
         onClose();
       } else {
         setError('Failed to generate category. Please try again or use a default category.');
@@ -78,6 +79,24 @@ const CategorySelectionModal: React.FC<CategorySelectionModalProps> = ({
         className="bg-white rounded-lg p-6 w-full max-w-md"
       >
         <h2 className="text-2xl font-bold mb-4">Select Category Type</h2>
+        
+        <div className="mb-4 flex items-center">
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showWordBank}
+              onChange={(e) => setShowWordBank(e.target.checked)}
+              className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-gray-700">Show word bank to all players</span>
+          </label>
+          <div className="ml-1 group relative">
+            <span className="text-gray-500 cursor-help">ⓘ</span>
+            <div className="absolute left-0 bottom-full mb-2 w-56 p-2 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              When enabled, all players (including the Chameleon) will see all possible words for the selected category.
+            </div>
+          </div>
+        </div>
         
         <div className="mb-6 space-y-4">
           {/* Option 1: Random Category */}
