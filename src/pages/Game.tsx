@@ -6,6 +6,7 @@ import { GameStatus } from '../types';
 import ChameleonIcon from '../components/ChameleonIcon';
 import { ArrowBackIcon, CopyIcon, RefreshIcon, UserCheckIcon, UserClockIcon, UserMinusIcon } from '../components/Icons';
 import { handlePageUnload } from '../services/gameService';
+import CategorySelectionModal from '../components/CategorySelectionModal';
 
 const Game: React.FC = () => {
   const { 
@@ -23,6 +24,9 @@ const Game: React.FC = () => {
 
   // Store the current player ID to detect if the player is kicked
   const [currentPlayerIdRef] = useState(currentPlayer?.id);
+  
+  // State for category selection modal
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   useEffect(() => {
     // Case 1: Game doesn't exist or player navigated directly to game page
@@ -89,9 +93,20 @@ const Game: React.FC = () => {
     navigate('/');
   };
 
-  const handleStartGame = async () => {
-    if (currentPlayer?.isHost) {
-      await startCurrentGame();
+  const handleStartGame = () => {
+    if (isLoading || !currentPlayer?.isHost) return;
+    
+    // Open the category selection modal
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCategorySelected = async (category: string, words: string[]) => {
+    if (isLoading) return;
+    
+    try {
+      await startCurrentGame({ category, words });
+    } catch (error) {
+      console.error('Error starting game:', error);
     }
   };
 
@@ -122,6 +137,12 @@ const Game: React.FC = () => {
 
   return (
     <div className="min-h-screen p-4 max-w-4xl mx-auto">
+      {/* Category Selection Modal */}
+      <CategorySelectionModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSelectCategory={handleCategorySelected}
+      />
       <header className="flex justify-between items-center mb-8">
         <button 
           onClick={handleLeaveGame}

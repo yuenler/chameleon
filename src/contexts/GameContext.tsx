@@ -9,7 +9,7 @@ interface GameContextType {
   error: string | null;
   createNewGame: (hostName: string) => Promise<void>;
   joinExistingGame: (joinCode: string, playerName: string) => Promise<void>;
-  startCurrentGame: () => Promise<void>;
+  startCurrentGame: (customCategory?: { category: string; words: string[] }) => Promise<void>;
   restartCurrentGame: () => Promise<void>;
   leaveCurrentGame: () => Promise<void>;
   setReady: (isReady: boolean) => Promise<void>;
@@ -141,7 +141,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const startCurrentGame = async () => {
+  const startCurrentGame = async (customCategory?: { category: string; words: string[] }) => {
     if (!game || !currentPlayer || !currentPlayer.isHost) {
       setError('You are not authorized to start the game');
       return;
@@ -151,7 +151,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(true);
       setError(null);
       
-      await startGame(game.id);
+      await startGame(game.id, customCategory);
       
       setIsLoading(false);
     } catch (err) {
