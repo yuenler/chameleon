@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
@@ -13,6 +13,17 @@ const Home: React.FC = () => {
   const [showHostForm, setShowHostForm] = useState(false);
   const [showJoinForm, setShowJoinForm] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  
+  // Check if user is already in a game and redirect to game page
+  useEffect(() => {
+    const gameId = localStorage.getItem('gameId');
+    const playerId = localStorage.getItem('playerId');
+    
+    if (gameId && playerId) {
+      console.log('User already in game, redirecting to game page');
+      navigate('/game');
+    }
+  }, [navigate]);
   
   const handleHostGame = async (e: React.FormEvent) => {
     e.preventDefault();
