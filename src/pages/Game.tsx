@@ -142,24 +142,31 @@ const Game: React.FC = () => {
         onClose={() => setIsCategoryModalOpen(false)}
         onSelectCategory={handleCategorySelected}
       />
-      <header className="flex justify-between items-center mb-8">
+      <header className="flex justify-between items-center mb-4">
         <button
           onClick={handleLeaveGame}
-          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md flex items-center gap-1 text-sm font-medium transition-colors"
+          className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-md flex items-center gap-1 text-xs font-medium transition-colors"
           title="Leave game permanently"
         >
-          <ArrowBackIcon className="text-sm" /> Leave Game
+          <ArrowBackIcon className="text-xs" /> Leave
         </button>
-        <h1 className="text-2xl font-bold text-primary-800 flex items-center">
-          <ChameleonIcon className="mr-2 h-6 w-6" /> Chameleon
-        </h1>
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-semibold">#{game.joinCode}</span>
+          <button
+            onClick={handleCopyJoinCode}
+            className="text-primary-500 hover:text-primary-700 p-1"
+            title="Copy join code"
+          >
+            <CopyIcon className="h-3.5 w-3.5" />
+          </button>
+        </div>
         {currentPlayer.isHost && game.status === GameStatus.PLAYING && (
           <button 
             onClick={handleRestartGame}
-            className="p-2 text-gray-600 hover:text-primary-600 transition-colors"
+            className="p-1 text-gray-600 hover:text-primary-600 transition-colors"
             title="Restart Game"
           >
-            <RefreshIcon className="text-xl" />
+            <RefreshIcon className="text-sm" />
           </button>
         )}
         {!currentPlayer.isHost && (
@@ -169,41 +176,6 @@ const Game: React.FC = () => {
 
       <main>
         <AnimatePresence mode="wait">
-          {/* Game Info Card */}
-          <motion.div
-            key="game-info"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="card mb-6"
-          >
-            <div className="flex flex-col sm:flex-row justify-between items-center">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-800">Game Code</h2>
-                <div className="flex items-center mt-2">
-                  <span className="text-3xl font-bold tracking-wider text-primary-600">{game.joinCode}</span>
-                  <button 
-                    onClick={handleCopyJoinCode}
-                    className="ml-2 p-2 text-gray-500 hover:text-primary-600 transition-colors"
-                    title="Copy Join Code"
-                  >
-                    <CopyIcon />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="mt-4 sm:mt-0">
-                <span className="block text-sm text-gray-500 mb-1">Your Status</span>
-                <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium 
-                  ${currentPlayer.isHost ? 'bg-purple-100 text-purple-800' : ''} 
-                  ${currentPlayer.isReady ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
-                >
-                  {currentPlayer.isHost ? 'Host' : 'Player'}
-                </span>
-              </div>
-            </div>
-          </motion.div>
 
           {/* Game Status */}
           {game.status === GameStatus.WAITING && (
@@ -213,9 +185,25 @@ const Game: React.FC = () => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="card mb-6"
+              className="space-y-6"
             >
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Waiting Room</h2>
+              
+              {/* Game Code Card for Waiting Room */}
+              <div className="card mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">Game Code</h2>
+                <div className="flex items-center">
+                  <span className="text-3xl font-bold tracking-wider text-primary-600">{game.joinCode}</span>
+                  <button 
+                    onClick={handleCopyJoinCode}
+                    className="ml-2 p-2 text-gray-500 hover:text-primary-600 transition-colors"
+                    title="Copy Join Code"
+                  >
+                    <CopyIcon />
+                  </button>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">Share this code with friends to join the game</p>
+              </div>
               
               <div className="flex justify-between items-center mb-6">
                 <span className="text-sm text-gray-500">{game.players.length} {game.players.length === 1 ? 'Player' : 'Players'}</span>
@@ -279,38 +267,64 @@ const Game: React.FC = () => {
               transition={{ duration: 0.3 }}
               className="space-y-6"
             >
-              {/* Category Card */}
-              <div className="card text-center">
-                <h2 className="text-xl font-semibold text-gray-800 mb-2">Category</h2>
-                <p className="text-3xl font-bold text-primary-700">{game.currentCategory}</p>
+              {/* Combined Category and Words Card */}
+              <div className="card">
+                <h2 className="text-xl font-semibold text-gray-800 mb-3 text-center">{game.currentCategory}</h2>
+                
+                {/* For non-chameleons - combined word bank and secret word */}
+                {!currentPlayer.isChameleon && game.showWordBank && (
+                  <div>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {game.categoryWords?.map((word: string) => (
+                        <span 
+                          key={word} 
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${word === game.currentWord 
+                            ? 'bg-primary-100 border border-primary-300 font-bold text-primary-700 shadow-sm' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                        >
+                          {word}
+                        </span>
+                      )) || <p className="text-gray-500">No words available</p>}
+                    </div>
+                    <div className="mt-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-primary-50 text-sm font-medium text-primary-700">
+                        <span className="h-3 w-3 mr-1.5 rounded-full bg-primary-500"></span>
+                        The secret word is highlighted. Don't reveal it!
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* For chameleons - just the word bank */}
+                {currentPlayer.isChameleon && game.showWordBank && (
+                  <div>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                      {game.categoryWords?.map((word: string) => (
+                        <span key={word} className="bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full text-sm text-gray-700 transition-colors">
+                          {word}
+                        </span>
+                      )) || <p className="text-gray-500">No words available</p>}
+                    </div>
+                    <div className="mt-4 text-center">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full bg-teal-100 text-sm font-medium text-teal-800">
+                        <ChameleonIcon className="h-4 w-4 mr-1.5 text-teal-700" />
+                        You are the chameleon! Try to guess the secret word
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                {/* When word bank is disabled but player is not chameleon */}
+                {!currentPlayer.isChameleon && !game.showWordBank && (
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-primary-700">{game.currentWord}</p>
+                    <p className="text-sm text-gray-500 mt-4">Don't reveal the word! The chameleon is trying to figure it out.</p>
+                  </div>
+                )}
               </div>
               
-              {/* Word Bank - Only shown if showWordBank is enabled */}
-              {game.showWordBank && (
-                <div className="card">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2 text-center">Word Bank</h2>
-                  <p className="text-sm text-gray-500 mb-3 text-center">All possible words for this category:</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {game.categoryWords?.map((word: string) => (
-                      <span key={word} className="bg-gray-100 px-3 py-1 rounded-full text-gray-700">
-                        {word}
-                      </span>
-                    )) || <p className="text-gray-500">No words available</p>}
-                  </div>
-                </div>
-              )}
-              
-              {/* Word Card - Only shown if player is not the chameleon */}
-              {!currentPlayer.isChameleon && (
-                <div className="card text-center">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">Secret Word</h2>
-                  <p className="text-3xl font-bold text-primary-700">{game.currentWord}</p>
-                  <p className="text-sm text-gray-500 mt-4">Don't reveal the word! The chameleon is trying to figure it out.</p>
-                </div>
-              )}
-              
-              {/* Chameleon Card - Only shown if player is the chameleon */}
-              {currentPlayer.isChameleon && (
+              {/* Chameleon Card - Only shown if player is the chameleon and word bank is disabled */}
+              {currentPlayer.isChameleon && !game.showWordBank && (
                 <div className="card text-center bg-gradient-to-r from-teal-500 to-primary-500 text-white">
                   <div className="flex justify-center mb-2">
                     <ChameleonIcon className="text-4xl h-12 w-12" />
