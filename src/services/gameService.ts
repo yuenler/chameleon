@@ -95,7 +95,7 @@ export const createGame = async (hostName: string): Promise<Game> => {
         id: playerId,
         name: hostName,
         isChameleon: false,
-        isReady: false,
+        isReady: true, // Players are automatically ready
         isHost: true
       }],
       status: GameStatus.WAITING,
@@ -117,7 +117,7 @@ export const createGame = async (hostName: string): Promise<Game> => {
         id: playerId,
         name: hostName,
         isChameleon: false,
-        isReady: false,
+        isReady: true, // Players are automatically ready
         isHost: true
       }]
     };
@@ -156,7 +156,7 @@ export const joinGame = async (joinCode: string, playerName: string): Promise<{g
       id: playerId,
       name: playerName,
       isChameleon: false,
-      isReady: false,
+      isReady: true, // Players are automatically ready
       isHost: false
     };
     

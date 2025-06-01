@@ -4,8 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGame } from '../contexts/GameContext';
 import { GameStatus } from '../types';
 import ChameleonIcon from '../components/ChameleonIcon';
-import { ArrowBackIcon, CopyIcon, RefreshIcon, UserCheckIcon, UserClockIcon, UserMinusIcon } from '../components/Icons';
-import { handlePageUnload } from '../services/gameService';
+import { ArrowBackIcon, CopyIcon, RefreshIcon, UserMinusIcon } from '../components/Icons';
 import CategorySelectionModal from '../components/CategorySelectionModal';
 
 const Game: React.FC = () => {
@@ -17,7 +16,8 @@ const Game: React.FC = () => {
     leaveCurrentGame, 
     startCurrentGame, 
     restartCurrentGame, 
-    setReady, 
+    // setReady no longer used since players are auto-ready
+    
     kickPlayer 
   } = useGame();
   const navigate = useNavigate();
@@ -28,9 +28,19 @@ const Game: React.FC = () => {
   // State for category selection modal
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
+  // Track if initial loading has completed
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  
   useEffect(() => {
-    // Case 1: Game doesn't exist or player navigated directly to game page
-    if (!game && !isLoading) {
+    // Mark initial load as complete after first render with game data
+    if (!initialLoadComplete && !isLoading) {
+      setInitialLoadComplete(true);
+    }
+    
+    // Only redirect if game doesn't exist after initial loading is complete
+    // and we're not currently loading (prevents premature redirect on reload)
+    if (initialLoadComplete && !game && !isLoading) {
+      console.log('No game found after initial load, redirecting to home');
       navigate('/');
       return;
     }
@@ -44,14 +54,8 @@ const Game: React.FC = () => {
       return;
     }
 
-    // Set up event listener for page unload (refresh, close tab)
-    const handleBeforeUnload = () => {
-      if (game && currentPlayer) {
-        console.log('User is leaving the page, removing from game...');
-        // Use our synchronous handler that stores leave info in localStorage
-        handlePageUnload(game.id, currentPlayer.id);
-      }
-    };
+    // We're no longer removing players on page reload or new tabs
+    // Instead, we'll rely on localStorage to maintain the game session
 
     // Handle navigation away using the History API (back button)
     const handlePopState = () => {
@@ -62,14 +66,14 @@ const Game: React.FC = () => {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    // No longer listening for beforeunload events
     window.addEventListener('popstate', handlePopState);
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
+      // No longer need to remove beforeunload listener
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [game, isLoading, navigate, currentPlayerIdRef, currentPlayer, leaveCurrentGame]);
+  }, [game, isLoading, navigate, currentPlayerIdRef, currentPlayer, leaveCurrentGame, initialLoadComplete]);
 
   const handleCopyJoinCode = () => {
     if (game?.joinCode) {
@@ -116,12 +120,6 @@ const Game: React.FC = () => {
     }
   };
 
-  const handleToggleReady = async () => {
-    if (currentPlayer) {
-      await setReady(!currentPlayer.isReady);
-    }
-  };
-
   if (isLoading || !game || !currentPlayer) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -144,11 +142,12 @@ const Game: React.FC = () => {
         onSelectCategory={handleCategorySelected}
       />
       <header className="flex justify-between items-center mb-8">
-        <button 
+        <button
           onClick={handleLeaveGame}
-          className="p-2 text-gray-600 hover:text-primary-600 transition-colors"
+          className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-md flex items-center gap-1 text-sm font-medium transition-colors"
+          title="Leave game permanently"
         >
-          <ArrowBackIcon className="text-xl" />
+          <ArrowBackIcon className="text-sm" /> Leave Game
         </button>
         <h1 className="text-2xl font-bold text-primary-800 flex items-center">
           <ChameleonIcon className="mr-2 h-6 w-6" /> Chameleon
@@ -199,7 +198,7 @@ const Game: React.FC = () => {
                   ${currentPlayer.isHost ? 'bg-purple-100 text-purple-800' : ''} 
                   ${currentPlayer.isReady ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}
                 >
-                  {currentPlayer.isHost ? 'Host' : 'Player'} • {currentPlayer.isReady ? 'Ready' : 'Not Ready'}
+                  {currentPlayer.isHost ? 'Host' : 'Player'}
                 </span>
               </div>
             </div>
@@ -221,14 +220,6 @@ const Game: React.FC = () => {
                 <span className="text-sm text-gray-500">{game.players.length} {game.players.length === 1 ? 'Player' : 'Players'}</span>
                 
                 <div className="flex space-x-3">
-                  {/* All players including host can mark themselves as ready */}
-                  <button 
-                    onClick={handleToggleReady}
-                    className={`btn ${currentPlayer.isReady ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'btn-primary'}`}
-                  >
-                    {currentPlayer.isReady ? 'Ready ✓' : 'Ready Up'}
-                  </button>
-                  
                   {/* Only host can start the game */}
                   {currentPlayer.isHost && (
                     <button 
@@ -255,12 +246,6 @@ const Game: React.FC = () => {
                       {player.isHost && <span className="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full">Host</span>}
                     </div>
                     <div className="flex items-center space-x-3">
-                      {/* Ready/Not Ready Status */}
-                      {player.isReady ? 
-                        <UserCheckIcon className="text-green-500" /> : 
-                        <UserClockIcon className="text-yellow-500" />
-                      }
-                      
                       {/* Kick button - only visible to host and only for non-host players */}
                       {currentPlayer.isHost && !player.isHost && player.id !== currentPlayer.id && (
                         <button 
